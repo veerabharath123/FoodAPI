@@ -7,5 +7,6 @@
         public string? IMAGE_TYPE { get; set; }
         public string? MODULE_TYPE { get; set; }
         public decimal? MODULE_ID { get; set; }
+        public Guid? TEMP_ID { get; set; }
     }
 }

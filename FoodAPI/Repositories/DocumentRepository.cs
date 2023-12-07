@@ -1,4 +1,5 @@
 ﻿using FoodAPI.Database;
+using FoodAPI.Helpers;
 using FoodAPI.Models;
 
 namespace FoodAPI.Repositories
@@ -11,13 +12,25 @@ namespace FoodAPI.Repositories
             _context = context;
         }
 
-        public async Task<KeyValues> SaveImage(KeyValues kv)
+        public async Task<Guid?> SaveImage(ImageDetails ImageDetails)
         {
-            if (!string.IsNullOrEmpty(kv.key))
+            var dt = DateTime.Now;
+            if (!string.IsNullOrEmpty(ImageDetails.Base64))
             {
-
+                var img = new Image
+                {
+                    CREATED_DATE = dt.Date,
+                    CREATED_TIME = TimeSpan.Parse(dt.ToString("HH:mm:ss")),
+                    IMAGE_DATA = Convert.FromBase64String(ImageDetails.Base64!),
+                    IMAGE_NAME = ImageDetails.Image_Name,
+                    IMAGE_TYPE = ImageDetails.Image_Type,
+                    TEMP_ID = Guid.NewGuid(),
+                };
+                await _context.Images.AddAsync(img);
+                if (await _context.SaveChangesAsync() > 0)
+                    return img.TEMP_ID;
             }
-            return kv;
+            return null;
         }
     }
 }

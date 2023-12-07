@@ -6,5 +6,6 @@
         public decimal? USER_ID { get; set; }
         public string? DESCRIPTION { get; set; } = string.Empty;
         public string? FAVOURITES { get; set; }
+        public Guid? IMAGE_ID { get; set; }
     }
 }
