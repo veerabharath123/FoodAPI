@@ -10,9 +10,11 @@ namespace FoodAPI.Repositories
     public class RecipeRepository: IRecipeRepository
     {
         private readonly FoodDbContext _context;
-        public RecipeRepository(FoodDbContext context)
+        private IDocumentRepository _documentRepository;
+        public RecipeRepository(FoodDbContext context, IDocumentRepository documentRepository)
         {
             _context = context;
+            _documentRepository = documentRepository;
         }
 
         public async Task<RecipeDetails> GetActiveRecipeById(decimal id)
@@ -25,6 +27,10 @@ namespace FoodAPI.Repositories
                 RecipeDetail = JsonConvert.DeserializeObject<RecipeDetails>(JsonConvert.SerializeObject(data));
                 RecipeDetail.Ingredients = await _context.Ingredients.AsNoTracking().Where(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
                               && a.RECIPE_ID == id).ToListAsync();
+                if (data.IMAGE_ID.HasValue)
+                {
+                    RecipeDetail.Image = await _documentRepository.GetImage(data.IMAGE_ID);
+                }
             }
             return RecipeDetail;
         }
@@ -38,6 +44,10 @@ namespace FoodAPI.Repositories
                 RecipeDetail = JsonConvert.DeserializeObject<RecipeDetails>(JsonConvert.SerializeObject(item));
                 RecipeDetail.TotalIngredients = await _context.Ingredients.AsNoTracking().CountAsync(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
                               && a.RECIPE_ID == item.ID);
+                if (item.IMAGE_ID.HasValue)
+                {
+                    RecipeDetail.Image = await _documentRepository.GetImage(item.IMAGE_ID);
+                }
                 RecipeDetails.Add(RecipeDetail);
             }
             return RecipeDetails;

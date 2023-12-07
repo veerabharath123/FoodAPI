@@ -9,7 +9,7 @@ namespace FoodAPI.Controllers
     [ApiController]
     public class DocumentsController : ControllerBase
     {
-        private readonly IDocumentRepository _documentRepository;
+        private IDocumentRepository _documentRepository;
         public DocumentsController(IDocumentRepository documentRepository)
         {
             _documentRepository = documentRepository;

@@ -58,9 +58,10 @@ namespace WatchList
             //});
 
             //services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
-            services.AddDbContext<FoodDbContext>(x => x.UseSqlServer(Configuration.GetSection("ConnectionStrings").GetSection("FoodDb").Value).EnableSensitiveDataLogging());
+            DbResgistrations.Registor(services, Configuration);
             services.AddScoped<DbContext, FoodDbContext>();
             services.AddScoped<IRecipeRepository, RecipeRepository>();
+            services.AddScoped<IDocumentRepository, DocumentRepository>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
