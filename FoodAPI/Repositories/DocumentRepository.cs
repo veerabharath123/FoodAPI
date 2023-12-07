@@ -1,10 +1,11 @@
 ﻿using FoodAPI.Database;
 using FoodAPI.Helpers;
+using FoodAPI.IRepositories;
 using FoodAPI.Models;
 
 namespace FoodAPI.Repositories
 {
-    public class DocumentRepository
+    public class DocumentRepository: IDocumentRepository
     {
         private readonly FoodDbContext _context;
         public DocumentRepository(FoodDbContext context)
