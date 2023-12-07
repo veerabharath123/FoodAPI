@@ -86,6 +86,7 @@ namespace FoodAPI.Repositories
                 var dt = DateTime.Now;
                 exist.DESCRIPTION = recipe.DESCRIPTION;
                 exist.RECIPE_NAME = recipe.RECIPE_NAME;
+                exist.IMAGE_ID = recipe.IMAGE_ID;
                 exist.UPDATED_DATE = dt.Date;
                 exist.UPDATED_TIME = TimeSpan.Parse(dt.ToString("HH:mm:ss"));
                 _context.Recipes.Update(exist);

@@ -41,7 +41,7 @@ namespace WatchList
                 options.AddPolicy(name: "FoodPolicy",
                                   policy =>
                                   {
-                                      policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                                      policy.AllowAnyOrigin().AllowAnyHeader().WithMethods("POST");
                                   });
             });
             //services.AddSession(options =>
@@ -82,7 +82,7 @@ namespace WatchList
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            app.UseCors("FoodPolicy");
             app.UseRouting();
             app.UseMiddleware<ExceptionHandler>();
             app.UseAuthorization();
