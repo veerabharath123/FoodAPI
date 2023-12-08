@@ -62,6 +62,10 @@ namespace FoodAPI.Repositories
                 RecipeDetail = JsonConvert.DeserializeObject<RecipeDetails>(JsonConvert.SerializeObject(item));
                 RecipeDetail.TotalIngredients = await _context.Ingredients.AsNoTracking().CountAsync(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
                               && a.RECIPE_ID == item.ID);
+                if (item.IMAGE_ID.HasValue)
+                {
+                    RecipeDetail.Image = await _documentRepository.GetImage(item.IMAGE_ID);
+                }
                 RecipeDetails.Add(RecipeDetail);
             }
             return RecipeDetails;
@@ -88,6 +92,7 @@ namespace FoodAPI.Repositories
                 exist.RECIPE_NAME = recipe.RECIPE_NAME;
                 exist.IMAGE_ID = recipe.IMAGE_ID;
                 exist.UPDATED_DATE = dt.Date;
+                exist.RECIPE_TYPE_ID = recipe.RECIPE_TYPE_ID;
                 exist.UPDATED_TIME = TimeSpan.Parse(dt.ToString("HH:mm:ss"));
                 _context.Recipes.Update(exist);
                 if (await _context.SaveChangesAsync() > 0)

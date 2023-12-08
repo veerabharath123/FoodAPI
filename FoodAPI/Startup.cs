@@ -15,6 +15,8 @@ using FoodAPI.Database;
 using FoodAPI.IRepositories;
 using FoodAPI.Repositories;
 using FoodAPI.Helpers;
+using System.Reflection;
+using Autofac;
 
 namespace WatchList
 {
