@@ -27,7 +27,7 @@ namespace FoodAPI.Helpers
         {
             context.Response.ContentType = "application/json";
             var response = new ApiResponse<string>{ Success = false };
-
+            response.Error = ex.ToString();
             switch (ex)
             {
                 case ApplicationException:
@@ -41,8 +41,8 @@ namespace FoodAPI.Helpers
                     response.Message = "The requested resource is not found.";
                     break;
                 default:
-                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                    response.StatusCode = (int)HttpStatusCode.NotFound;
+                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     response.Message = "Internal Server Error, please retry after sometime.";
                     break;
 

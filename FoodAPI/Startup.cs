@@ -41,10 +41,10 @@ namespace WatchList
             services.AddCors(options =>
             {
                 options.AddPolicy(name: "FoodPolicy",
-                                  policy =>
-                                  {
-                                      policy.AllowAnyOrigin().AllowAnyHeader().WithMethods("POST");
-                                  });
+                    policy =>
+                    {
+                        policy.WithOrigins(Configuration.GetSection("AllowedHosts").Value?.Split(";")!).AllowAnyHeader().WithMethods("POST");
+                    });
             });
             //services.AddSession(options =>
             //{
@@ -60,11 +60,10 @@ namespace WatchList
             //});
 
             //services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
-            DbResgistrations.Registor(services, Configuration);
-            services.AddScoped<DbContext, FoodDbContext>();
-            services.AddScoped<IRecipeRepository, RecipeRepository>();
-            services.AddScoped<IDocumentRepository, DocumentRepository>();
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            //Custom extension method for adding Db context 
+            services.Registor(Configuration);
+            //Custom extension method for injecting dependencies
+            services.Inject();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

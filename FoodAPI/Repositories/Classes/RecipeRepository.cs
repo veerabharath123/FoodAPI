@@ -1,8 +1,10 @@
-﻿using FoodAPI.Database;
+﻿using Azure.Core;
+using FoodAPI.Database;
 using FoodAPI.IRepositories;
 using FoodAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Recipe.Helpers;
 using System.Text.Json.Serialization;
 
 namespace FoodAPI.Repositories
@@ -34,10 +36,11 @@ namespace FoodAPI.Repositories
             }
             return RecipeDetail;
         }
-        public async Task<List<RecipeDetails>> GetAllActiveRecipes()
+        public async Task<PagerResponse<RecipeDetails>> GetAllActiveRecipes(PagerRequest request)
         {
             var RecipeDetails = new List<RecipeDetails>();
             var data = await _context.Recipes.AsNoTracking().Where(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y").ToListAsync();
+                
             foreach (var item in data)
             {
                 var RecipeDetail = new RecipeDetails();
@@ -50,9 +53,9 @@ namespace FoodAPI.Repositories
                 }
                 RecipeDetails.Add(RecipeDetail);
             }
-            return RecipeDetails;
+            return await Pager<RecipeDetails>.Paginate(RecipeDetails, request);
         }
-        public async Task<List<RecipeDetails>> GetAllFavouriteRecipes()
+        public async Task<PagerResponse<RecipeDetails>> GetAllFavouriteRecipes(PagerRequest request)
         {
             var RecipeDetails = new List<RecipeDetails>();
             var data = await _context.Recipes.AsNoTracking().Where(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y" && a.FAVOURITES == "Y").ToListAsync();
@@ -68,9 +71,9 @@ namespace FoodAPI.Repositories
                 }
                 RecipeDetails.Add(RecipeDetail);
             }
-            return RecipeDetails;
+            return await Pager<RecipeDetails>.Paginate(RecipeDetails, request);
         }
-        public async Task<decimal> AddRecipe(Recipe recipe)
+        public async Task<decimal> AddRecipe(FoodAPI.Models.Recipe recipe)
         {
             var dt = DateTime.Now;
             recipe.ACTIVE = "Y";
@@ -82,7 +85,7 @@ namespace FoodAPI.Repositories
                 return recipe.ID;
             else return 0;
         }
-        public async Task<decimal> UpdateRecipe(Recipe recipe)
+        public async Task<decimal> UpdateRecipe(FoodAPI.Models.Recipe recipe)
         {
             var exist = await _context.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.ID == recipe.ID && x.ACTIVE == "Y" && x.DELETE_FLAG != "Y");
             if(exist != null)

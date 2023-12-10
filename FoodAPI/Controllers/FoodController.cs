@@ -3,6 +3,7 @@ using FoodAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Recipe.Helpers;
 
 namespace FoodAPI.Controllers
 {
@@ -16,10 +17,10 @@ namespace FoodAPI.Controllers
             _recipeRepository = recipeRepository;
         }
         [HttpPost("GetRecipeList")]
-        public async Task<IActionResult> GetRecipeList()
+        public async Task<IActionResult> GetRecipeList(PagerRequest request)
         {
-            var data = await _recipeRepository.GetAllActiveRecipes();
-            return Ok(new ApiResponse<List<RecipeDetails>>
+            var data = await _recipeRepository.GetAllActiveRecipes(request);
+            return Ok(new ApiResponse<PagerResponse<RecipeDetails>>
             {
                 Result = data
             });
@@ -36,28 +37,16 @@ namespace FoodAPI.Controllers
         [HttpPost("SaveRecipe")]
         public async Task<IActionResult> SaveRecipe(RecipeDetails request)
         {
-            try
+            var recipe = JsonConvert.DeserializeObject<FoodAPI.Models.Recipe>(JsonConvert.SerializeObject(request));
+            if (recipe?.ID == 0) request.ID = await _recipeRepository.AddRecipe(recipe);
+            else request.ID = await _recipeRepository.UpdateRecipe(recipe!);
+            var result = await _recipeRepository.InsertOrUpdateIngredients(request.Ingredients, request.ID);
+            return Ok(new ApiResponse<bool>
             {
-                var recipe = JsonConvert.DeserializeObject<Recipe>(JsonConvert.SerializeObject(request));
-                if (recipe?.ID == 0) request.ID = await _recipeRepository.AddRecipe(recipe);
-                else request.ID = await _recipeRepository.UpdateRecipe(recipe!);
-                var result = await _recipeRepository.InsertOrUpdateIngredients(request.Ingredients, request.ID);
-                return Ok(new ApiResponse<bool>
-                {
-                    Result = result,
-                    Success = result,
-                    Message = $"Saving recipe {(result ? "" : "un")}successful"
-                });
-            }
-            catch(Exception ex)
-            {
-                return Ok(new ApiResponse<bool>
-                {
-                    Result = false,
-                    Success = false,
-                    Message = $"Saving recipe {(false ? "" : "un")}successful"
-                });
-            }
+                Result = result,
+                Success = result,
+                Message = $"Saving recipe {(result ? "" : "un")}successful"
+            });
         }
         [HttpPost("DeleteRecipeById")]
         public async Task<IActionResult> DeleteRecipeById(KeyValues kv)
@@ -82,10 +71,10 @@ namespace FoodAPI.Controllers
             });
         }
         [HttpPost("GetFavourites")]
-        public async Task<IActionResult> GetFavourites()
+        public async Task<IActionResult> GetFavourites(PagerRequest request)
         {
-            var result = await _recipeRepository.GetAllFavouriteRecipes();
-            return Ok(new ApiResponse<List<RecipeDetails>>
+            var result = await _recipeRepository.GetAllFavouriteRecipes(request);
+            return Ok(new ApiResponse<PagerResponse<RecipeDetails>>
             {
                 Result = result,
             });
