@@ -45,7 +45,7 @@ namespace FoodAPI.Controllers
             {
                 Result = result,
                 Success = result,
-                Message = $"Saving recipe {(result ? "" : "un")}successful"
+                Message = $"{(recipe?.ID == 0 ? "Saving" : "Updating")} recipe was {(result ? "" : "un")}successful"
             });
         }
         [HttpPost("DeleteRecipeById")]
@@ -56,7 +56,7 @@ namespace FoodAPI.Controllers
             {
                 Result = result,
                 Success = result,
-                Message = $"Deleting recipe {(result ? "" : "un")}successful"
+                Message = $"Deleting recipe was {(result ? "" : "un")}successful"
             });
         }
         [HttpPost("DeleteIngredientById")]
@@ -67,7 +67,7 @@ namespace FoodAPI.Controllers
             {
                 Result = result,
                 Success = result,
-                Message = $"Deleting ingredient {(result ? "" : "un")}successful"
+                Message = $"Deleting ingredient was {(result ? "" : "un")}successful"
             });
         }
         [HttpPost("GetFavourites")]

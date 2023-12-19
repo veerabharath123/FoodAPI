@@ -24,34 +24,26 @@ namespace FoodAPI.Repositories
         public async Task<RecipeDetails> GetActiveRecipeById(decimal id)
         {
             var result = (from a in _context.Recipes
-                          join b in _context.Ingredients on a.ID equals b.RECIPE_ID into ab
+                          join b in _context.Ingredients.Where(x => x.ACTIVE == "Y" && x.DELETE_FLAG != "Y") on a.ID equals b.RECIPE_ID into ab
                           where a.ACTIVE == "Y" && a.DELETE_FLAG != "Y" && a.ID == id
                           group ab by a into g
                           select new RecipeDetails()
                           {
-                              Ingredients = g.SelectMany(x => x).Where(x => x.ACTIVE == "Y" && x.DELETE_FLAG != "Y").ToList(),
+                              Ingredients = g.SelectMany(x => x).ToList(),
                               RECIPE_NAME = g.Key.RECIPE_NAME,
-                          }).FirstOrDefault();
-            var RecipeDetail = new RecipeDetails();
-            var data = await _context.Recipes.AsNoTracking().FirstOrDefaultAsync(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
-                              && a.ID == id);
-            if(data != null)
-            {
-                RecipeDetail = JsonConvert.DeserializeObject<RecipeDetails>(JsonConvert.SerializeObject(data));
-                RecipeDetail.Ingredients = await _context.Ingredients.AsNoTracking().Where(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
-                              && a.RECIPE_ID == id).ToListAsync();
-                if (data.IMAGE_ID.HasValue)
-                {
-                    RecipeDetail.Image = await _documentRepository.GetImage(data.IMAGE_ID);
-                }
-            }
-            return RecipeDetail;
+                              DESCRIPTION = g.Key.DESCRIPTION,
+                              ID = g.Key.ID,
+                              IMAGE_ID = g.Key.IMAGE_ID,
+                              RECIPE_TYPE_ID = g.Key.RECIPE_TYPE_ID,
+                          }).AsNoTracking().FirstOrDefault();
+            if (result?.IMAGE_ID != null)
+                result.Image = await _documentRepository.GetImage(result.IMAGE_ID);
+            return result;
         }
         public async Task<PagerResponse<RecipeDetails>> GetAllActiveRecipes(PagerRequest request)
         {
             var data = (from a in _context.Recipes
-                        join b in _context.Ingredients on a.ID equals b.RECIPE_ID into ingredientsGroup
-                        from ingobj in ingredientsGroup.DefaultIfEmpty()
+                        join b in _context.Ingredients.Where(x => x.DELETE_FLAG != "Y" && x.ACTIVE == "Y") on a.ID equals b.RECIPE_ID
                         where a.DELETE_FLAG != "Y" && a.ACTIVE == "Y"
                         group a by new { a.ID, a.RECIPE_NAME, a.IMAGE_ID, a.RECIPE_TYPE_ID,a.FAVOURITES } into grouped
                         select new RecipeDetails
@@ -65,7 +57,10 @@ namespace FoodAPI.Repositories
                         }).AsNoTracking();
             var result = await Pager<RecipeDetails>.Paginate(data, request);
             if (request.view == "block-view")
-                result.Pages.Where(x => x.IMAGE_ID.HasValue).ToList().ForEach(async x => x.Image = await _documentRepository.GetImage(x.IMAGE_ID));
+                foreach (var item in result.Pages.Where(x => x.IMAGE_ID.HasValue))
+                {
+                    item.Image = await _documentRepository.GetImage(item.IMAGE_ID);
+                }
             return result;
         }
         public async Task<PagerResponse<RecipeDetails>> GetAllFavouriteRecipes(PagerRequest request)
