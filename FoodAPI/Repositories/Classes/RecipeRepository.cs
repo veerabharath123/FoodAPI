@@ -21,6 +21,7 @@ namespace FoodAPI.Repositories
 
         public async Task<RecipeDetails> GetActiveRecipeById(decimal id)
         {
+
             var RecipeDetail = new RecipeDetails();
             var data = await _context.Recipes.AsNoTracking().FirstOrDefaultAsync(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
                               && a.ID == id);
@@ -38,22 +39,24 @@ namespace FoodAPI.Repositories
         }
         public async Task<PagerResponse<RecipeDetails>> GetAllActiveRecipes(PagerRequest request)
         {
-            var RecipeDetails = new List<RecipeDetails>();
-            var data = await _context.Recipes.AsNoTracking().Where(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y").ToListAsync();
-                
-            foreach (var item in data)
-            {
-                var RecipeDetail = new RecipeDetails();
-                RecipeDetail = JsonConvert.DeserializeObject<RecipeDetails>(JsonConvert.SerializeObject(item));
-                RecipeDetail.TotalIngredients = await _context.Ingredients.AsNoTracking().CountAsync(a => a.ACTIVE == "Y" && a.DELETE_FLAG != "Y"
-                              && a.RECIPE_ID == item.ID);
-                if (item.IMAGE_ID.HasValue)
-                {
-                    RecipeDetail.Image = await _documentRepository.GetImage(item.IMAGE_ID);
-                }
-                RecipeDetails.Add(RecipeDetail);
-            }
-            return await Pager<RecipeDetails>.Paginate(RecipeDetails, request);
+            var data = (from a in _context.Recipes
+                        join b in _context.Ingredients on a.ID equals b.RECIPE_ID into ingredientsGroup
+                        from ingobj in ingredientsGroup.DefaultIfEmpty()
+                        where a.DELETE_FLAG != "Y" && a.ACTIVE == "Y"
+                        group a by new { a.ID, a.RECIPE_NAME, a.IMAGE_ID, a.RECIPE_TYPE_ID,a.FAVOURITES } into grouped
+                        select new RecipeDetails
+                        {
+                            TotalIngredients = grouped.Count(),
+                            RECIPE_NAME = grouped.Key.RECIPE_NAME,
+                            ID = grouped.Key.ID,
+                            IMAGE_ID = grouped.Key.IMAGE_ID,
+                            RECIPE_TYPE_ID = grouped.Key.RECIPE_TYPE_ID,
+                            FAVOURITES = grouped.Key.FAVOURITES
+                        }).AsNoTracking();
+            var result = await Pager<RecipeDetails>.Paginate(data, request);
+            if (request.view == "block-view")
+                result.Pages.Where(x => x.IMAGE_ID.HasValue).ToList().ForEach(async x => x.Image = await _documentRepository.GetImage(x.IMAGE_ID));
+            return result;
         }
         public async Task<PagerResponse<RecipeDetails>> GetAllFavouriteRecipes(PagerRequest request)
         {
