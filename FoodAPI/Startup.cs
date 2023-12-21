@@ -61,7 +61,7 @@ namespace WatchList
 
             //services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
             //Custom extension method for adding Db context 
-            services.Registor(Configuration);
+            services.RegistorDb(Configuration);
             //Custom extension method for injecting dependencies
             services.Inject();
         }
