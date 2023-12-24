@@ -1,19 +1,24 @@
-﻿using FoodAPI.Models;
+﻿using FoodAPI.Dtos.RequestDto;
+using FoodAPI.Dtos.ResponseDto;
+using FoodAPI.Models;
 using Recipe.Helpers;
 
 namespace FoodAPI.IRepositories
 {
     public interface IRecipeRepository
     {
-        Task<RecipeDetails> GetActiveRecipeById(decimal id);
-        Task<PagerResponse<RecipeDetails>> GetAllActiveRecipes(PagerRequest request);
-        Task<decimal> AddRecipe(FoodAPI.Models.Recipe recipe);
-        Task<decimal> UpdateRecipe(FoodAPI.Models.Recipe recipe);
+        Task<RecipeDetailsResponse> GetActiveRecipeById(decimal id);
+        Task<PagerResponse<RecipeDetailsResponse>> GetAllActiveRecipes(DecimalPageRequest request);
+        Task<PagerResponse<RecipeDetailsResponse>> GetAllFavouriteRecipes(DecimalPageRequest request);
+        Task<decimal> AddRecipe(RecipeResponse request);
+        Task<decimal> UpdateRecipe(RecipeResponse request);
         Task<bool> DeleteRecipe(decimal id);
-        Task<bool> InsertOrUpdateIngredients(List<Ingredient> ingredients,decimal? id);
+        Task<decimal> AddIngredient(IngredientsResponse request);
+        Task<decimal> UpdateIngredient(IngredientsResponse request);
+        Task<bool> InsertOrUpdateIngredients(List<IngredientsResponse> ingredients, decimal? id);
         Task<bool> DeleteIngredient(decimal id);
-        Task<PagerResponse<RecipeDetails>> GetAllFavouriteRecipes(PagerRequest request);
         Task<bool> ChangeFav(decimal id, string change);
+
 
 
     }

@@ -1,5 +1,9 @@
-﻿using FoodAPI.IRepositories;
+﻿using FoodAPI.Dtos.RequestDto;
+using FoodAPI.Dtos.ResponseDto;
+using FoodAPI.IRepositories;
 using FoodAPI.Models;
+using FoodAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -9,84 +13,55 @@ namespace FoodAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class FoodController : ControllerBase
     {
-        private IRecipeRepository _recipeRepository;
-        public FoodController(IRecipeRepository recipeRepository)
+        private IFoodServices _foodServices;
+        public FoodController(IFoodServices foodServices)
         {
-            _recipeRepository = recipeRepository;
+            _foodServices = foodServices;
         }
         [HttpPost("GetRecipeList")]
-        public async Task<IActionResult> GetRecipeList(PagerRequest request)
+        public async Task<IActionResult> GetRecipeList(DecimalPageRequest request)
         {
-            var data = await _recipeRepository.GetAllActiveRecipes(request);
-            return Ok(new ApiResponse<PagerResponse<RecipeDetails>>
-            {
-                Result = data
-            });
+            var result = await _foodServices.GetRecipeList(request);
+            return Ok(result);
         }
         [HttpPost("GetRecipeById")]
-        public async Task<IActionResult> GetRecipeById(KeyValues kv)
+        public async Task<IActionResult> GetRecipeById(DecimalRequest request)
         {
-            var data = await _recipeRepository.GetActiveRecipeById(kv.value??0);
-            return Ok(new ApiResponse<RecipeDetails>
-            {
-                Result = data
-            });
+            var result = await _foodServices.GetRecipeById(request.id);
+            return Ok(result);
         }
         [HttpPost("SaveRecipe")]
-        public async Task<IActionResult> SaveRecipe(RecipeDetails request)
+        public async Task<IActionResult> SaveRecipe(RecipeDetailsResponse request)
         {
-            var recipe = JsonConvert.DeserializeObject<FoodAPI.Models.Recipe>(JsonConvert.SerializeObject(request));
-            if (recipe?.ID == 0) request.ID = await _recipeRepository.AddRecipe(recipe);
-            else request.ID = await _recipeRepository.UpdateRecipe(recipe!);
-            var result = await _recipeRepository.InsertOrUpdateIngredients(request.Ingredients, request.ID);
-            return Ok(new ApiResponse<bool>
-            {
-                Result = result,
-                Success = result,
-                Message = $"{(recipe?.ID == 0 ? "Saving" : "Updating")} recipe was {(result ? "" : "un")}successful"
-            });
+            var result = await _foodServices.SaveRecipe(request);
+            return Ok(result);
         }
         [HttpPost("DeleteRecipeById")]
-        public async Task<IActionResult> DeleteRecipeById(KeyValues kv)
+        public async Task<IActionResult> DeleteRecipeById(DecimalRequest request)
         {
-            var result = await _recipeRepository.DeleteRecipe(kv.value ?? 0);
-            return Ok(new ApiResponse<bool>
-            {
-                Result = result,
-                Success = result,
-                Message = $"Deleting recipe was {(result ? "" : "un")}successful"
-            });
+            var result = await _foodServices.DeleteRecipeById(request.id);
+            return Ok(result);
         }
         [HttpPost("DeleteIngredientById")]
-        public async Task<IActionResult> DeleteIngredientById(KeyValues kv)
+        public async Task<IActionResult> DeleteIngredientById(DecimalRequest request)
         {
-            var result = await _recipeRepository.DeleteIngredient(kv.value ?? 0);
-            return Ok(new ApiResponse<bool>
-            {
-                Result = result,
-                Success = result,
-                Message = $"Deleting ingredient was {(result ? "" : "un")}successful"
-            });
+            var result = await _foodServices.DeleteIngredientById(request.id);
+            return Ok(result);
         }
         [HttpPost("GetFavourites")]
-        public async Task<IActionResult> GetFavourites(PagerRequest request)
+        public async Task<IActionResult> GetFavourites(DecimalPageRequest request)
         {
-            var result = await _recipeRepository.GetAllFavouriteRecipes(request);
-            return Ok(new ApiResponse<PagerResponse<RecipeDetails>>
-            {
-                Result = result,
-            });
+            var result = await _foodServices.GetFavourites(request);
+            return Ok(result);
         }
         [HttpPost("ChangeFav")]
         public async Task<IActionResult> ChangeFav(KeyValues kv)
         {
-            var result = await _recipeRepository.ChangeFav(kv.value??0,kv.key!);
-            return Ok(new ApiResponse<bool>
-            {
-                Result = result,
-            });
+            var result = await _foodServices.ChangeFav(kv.value??0,kv.key!);
+            return Ok(result);
         }
     }
 }

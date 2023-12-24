@@ -8,7 +8,7 @@
 
         public RecipeDetails()
         {
-            Ingredients = new List<Ingredient>();
+            Ingredients = new List<Ingredient>(); 
         }
     }
 }

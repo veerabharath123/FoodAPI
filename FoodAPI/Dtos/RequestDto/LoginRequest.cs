@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace FoodAPI.Models
+namespace FoodAPI.Dtos.RequestDto
 {
-    public class LoginUser
+    public class LoginRequest
     {
         [Required]
         public string? emailOrUsername { get; set; }

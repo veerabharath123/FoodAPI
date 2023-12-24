@@ -1,5 +1,6 @@
-﻿using FoodAPI.IRepositories;
-using FoodAPI.Models;
+﻿using FoodAPI.Dtos.RequestDto;
+using FoodAPI.IRepositories;
+using FoodAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,21 +10,16 @@ namespace FoodAPI.Controllers
     [ApiController]
     public class DocumentsController : ControllerBase
     {
-        private IDocumentRepository _documentRepository;
-        public DocumentsController(IDocumentRepository documentRepository)
+        private IDocumentServices _documentServices;
+        public DocumentsController(IDocumentServices documentServices)
         {
-            _documentRepository = documentRepository;
+            _documentServices = documentServices;
         }
         [HttpPost("SaveImage")]
-        public async Task<IActionResult> SaveImage(ImageDetails imgDetails)
+        public async Task<IActionResult> SaveImage(ImageRequest request)
         {
-            var result = await _documentRepository.SaveImage(imgDetails);
-            return Ok(new ApiResponse<Guid?>
-            {
-                Success = result != null,
-                Result = result,
-                Message = $"Saving image is {(result != null ? "" : "un")}successful"
-            });
+            var result = await _documentServices.SaveImage(request);
+            return Ok(result);
         }
     }
 }

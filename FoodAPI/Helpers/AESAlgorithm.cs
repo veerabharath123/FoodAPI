@@ -40,35 +40,34 @@ namespace FoodAPI.Helpers
                 // Create the streams used for decryption.
                 using (var msDecrypt = new MemoryStream(cipherText))
                 {
-                    try
+                    using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
                     {
-                        using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                        using (var srDecrypt = new StreamReader(csDecrypt))
                         {
-                            using (var srDecrypt = new StreamReader(csDecrypt))
-                            {
-                                // Read the decrypted bytes from the decrypting stream
-                                // and place them in a string.
-                                plaintext = srDecrypt.ReadToEnd();
-                            }
+                            // Read the decrypted bytes from the decrypting stream
+                            // and place them in a string.
+                            plaintext = srDecrypt.ReadToEnd();
                         }
-                    }
-                    catch(Exception ex)
-                    {
-                        plaintext = ex.ToString();
                     }
                 }
             }
             return plaintext;
         }
-        public static string DecryptStringAES(this string cipherText,IConfiguration config)
+        public static string? DecryptStringAES(this string cipherText,IConfiguration config)
         {
-            var keybytes = Encoding.UTF8.GetBytes(config.GetSection("Encryption").GetSection("key").Value!);
-            //var keybytes = HttpServerUtility.UrlTokenDecode(config.GetSection("Encryption").GetSection("key").Value!);
-            var iv = Encoding.UTF8.GetBytes(config.GetSection("Encryption").GetSection("iv").Value!);
+            try
+            {
+                var keybytes = Encoding.UTF8.GetBytes(config.GetSection("Encryption").GetSection("key").Value!);
+                var iv = Encoding.UTF8.GetBytes(config.GetSection("Encryption").GetSection("iv").Value!);
 
-            var encrypted = Convert.FromBase64String(cipherText);
-            var decriptedFromJavascript = encrypted.DecryptStringFromBytes(keybytes, iv);
-            return string.Format(decriptedFromJavascript);
+                var encrypted = Convert.FromBase64String(cipherText);
+                var decriptedFromJavascript = encrypted.DecryptStringFromBytes(keybytes, iv);
+                return string.Format(decriptedFromJavascript);
+            }
+            catch(Exception)
+            {
+                return null;
+            }
         }
     }
 }

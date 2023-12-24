@@ -17,6 +17,7 @@ using FoodAPI.Repositories;
 using FoodAPI.Helpers;
 using System.Reflection;
 using Autofac;
+using Microsoft.OpenApi.Models;
 
 namespace WatchList
 {
@@ -63,7 +64,38 @@ namespace WatchList
             //Custom extension method for adding Db context 
             services.RegistorDb(Configuration);
             //Custom extension method for injecting dependencies
-            services.Inject();
+            services.InjectDependencies();
+            services.AddJWTAuthentication(Configuration);
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+
+                // Define the security scheme (JWT)
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please enter JWT with Bearer into field",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+
+                // Add the security requirement for Swagger UI
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -73,23 +105,39 @@ namespace WatchList
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
+                });
             }
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
+            // CORS middleware
             app.UseCors("FoodPolicy");
-            app.UseRouting();
+
+            // Exception handling middleware
             app.UseMiddleware<ExceptionHandler>();
-            app.UseAuthorization();
-            //app.UseCookiePolicy();
+
+            // Authentication middleware (UseAuthentication before UseAuthorization)
             app.UseAuthentication();
-            app.UseEndpoints(endpoints => {
+
+            app.UseRouting();
+
+            // Authorization middleware
+            app.UseAuthorization();
+
+            // Cookie policy middleware (if needed)
+            // app.UseCookiePolicy();
+
+            app.UseEndpoints(endpoints =>
+            {
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
             });
