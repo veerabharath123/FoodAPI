@@ -62,6 +62,7 @@ namespace FoodAPI.Services.Classes
         }   
         public async Task<ApiResponse<UserResponse>> CreateUser(LoginRequest login)
         {
+            login.password = AESAlgorithm.DecryptStringAES(login.password!, _config);
             decimal result = await _userRepository.InsertUser(login);
             if (result > 0) return GetUserDetails(login.username!, result);
             return new ApiResponse<UserResponse>

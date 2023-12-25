@@ -13,7 +13,7 @@ namespace FoodAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class FoodController : ControllerBase
     {
         private IFoodServices _foodServices;
