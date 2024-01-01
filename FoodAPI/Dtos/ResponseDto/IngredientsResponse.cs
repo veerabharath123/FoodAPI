@@ -8,5 +8,6 @@
         public string ingredient_name { get; set; } = string.Empty;
         public string quantity { get; set; } = string.Empty;
         public decimal? recipe_id { get; set; }
+        public string optional_flag { get; set; } = string.Empty;
     }
 }

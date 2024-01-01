@@ -1,7 +1,9 @@
 ﻿using FoodAPI.Models;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text;
 
@@ -37,5 +39,25 @@ namespace FoodAPI.Helpers
             claimsIdentity.AddClaim(new Claim(ClaimTypes.Name, user.USERNAME!));
             return claimsIdentity;
         }
+        public static IQueryable<T> Sort<T>(this IQueryable<T> q, List<SortingModel> sortList)
+        {
+
+            var parameter = Expression.Parameter(typeof(T), "p");
+            Expression expression = parameter;
+
+            for (int i = 0; i < sortList.Count; i++)
+            {
+                var property = Expression.Property(expression, sortList[i].name);
+                expression = Expression.Lambda(property, parameter);
+                string methodName = $"{(i == 0 ? "Order" : "Then")}By{(sortList[i].desc ? "Descending" : string.Empty)}";
+                expression = Expression.Call(typeof(Queryable), methodName, new[] { q.ElementType, property.Type }, q.Expression, expression);
+            }
+            return q.Provider.CreateQuery<T>(expression);
+        }
     } 
+    public class SortingModel
+    {
+        public string name { get; set; } = string.Empty;
+        public bool desc { get; set; }
+    }
 }

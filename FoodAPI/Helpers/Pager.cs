@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Recipe.Helpers
 {
-    public static class Pager<T>
+    public static class Pager
     {
-        private static PagerResponse<T> Logic(PagerRequest request,int totalItems)
+        private static PagerResponse<T> PaginationLogic<T>(this PagerRequest request,int totalItems)
         {
             var totalPages = (int)Math.Ceiling((decimal)totalItems / (decimal)request.pageSize);
             if (request.currentPage < 1)
@@ -69,19 +69,32 @@ namespace Recipe.Helpers
                 EndIndex = endIndex,
             };
         }
-        public async static Task<PagerResponse<T>> Paginate(IQueryable<T> Pages, PagerRequest request)
+        public async static Task<PagerResponse<T>> PaginateAsync<T>(this IQueryable<T> Pages, PagerRequest request)
         {
+            var result = new PagerResponse<T>();
             var totalItems = await Pages.CountAsync();
-            var result = Logic(request, totalItems);
+            if(totalItems == 0) return result;
+            result = request.PaginationLogic<T>(totalItems);
             result.Pages = await Pages.Skip(result.StartIndex).Take(request.pageSize).ToListAsync();
             return result;
         }
-        public async static Task<PagerResponse<T>> Paginate(IEnumerable<T> Pages, PagerRequest request)
+        public static PagerResponse<T> Paginate<T>(IQueryable<T> Pages, PagerRequest request)
+        {
+            var result = new PagerResponse<T>();
+            var totalItems = Pages.Count();
+            if (totalItems == 0) return result;
+            result = request.PaginationLogic<T>(totalItems);
+            result.Pages = Pages.Skip(result.StartIndex).Take(request.pageSize).ToList();
+            return result;
+        }
+        public static async Task<PagerResponse<T>> PaginateAsync<T>(IEnumerable<T> Pages, PagerRequest request)
         {
             var task = Task.Run(() =>
             {
+                var result = new PagerResponse<T>();
                 var totalItems = Pages.Count();
-                var result = Logic(request, totalItems);
+                if (totalItems == 0) return result;
+                result = request.PaginationLogic<T>(totalItems);
                 result.Pages = Pages.Skip(result.StartIndex).Take(request.pageSize).ToList();
                 return result;
             });
@@ -105,6 +118,6 @@ namespace Recipe.Helpers
         public int EndPage { get; set; }
         public int StartIndex { get; set; }
         public int EndIndex { get; set; }
-        public IEnumerable<T> Pages { get; set; }
+        public IEnumerable<T> Pages { get; set; } = new List<T>();
     }
 }

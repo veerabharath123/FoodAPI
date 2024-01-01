@@ -3,11 +3,13 @@ using Azure.Core;
 using FoodAPI.Database;
 using FoodAPI.Dtos.RequestDto;
 using FoodAPI.Dtos.ResponseDto;
+using FoodAPI.Helpers;
 using FoodAPI.IRepositories;
 using FoodAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Recipe.Helpers;
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
 namespace FoodAPI.Repositories
@@ -28,7 +30,7 @@ namespace FoodAPI.Repositories
 
         public async Task<RecipeDetailsResponse> GetActiveRecipeById(decimal id)
         {
-            var result = (from a in _context.Recipes
+            var result = await (from a in _context.Recipes
                           join b in _context.Ingredients.Where(x => x.ACTIVE == "Y" && x.DELETE_FLAG != "Y") on a.ID equals b.RECIPE_ID into ab
                           where a.ACTIVE == "Y" && a.DELETE_FLAG != "Y" && a.ID == id
                           group ab by a into g
@@ -40,14 +42,14 @@ namespace FoodAPI.Repositories
                               id = g.Key.ID,
                               image_id = g.Key.IMAGE_ID,
                               recipe_type_id = g.Key.RECIPE_TYPE_ID,
-                          }).AsNoTracking().FirstOrDefault();
+                          }).AsNoTracking().FirstOrDefaultAsync();
             if (result?.image_id != null)
                 result.image = await _documentRepository.GetImage(result.image_id);
             return result;
         }
         public async Task<PagerResponse<RecipeDetailsResponse>> GetAllActiveRecipes(DecimalPageRequest request)
         {
-            var data = (from a in _context.Recipes
+            var result = await (from a in _context.Recipes
                         join b in _context.Ingredients.Where(x => x.DELETE_FLAG != "Y" && x.ACTIVE == "Y") on a.ID equals b.RECIPE_ID
                         where a.DELETE_FLAG != "Y" && a.ACTIVE == "Y" && a.USER_ID == request.id
                         group a by new { a.ID, a.RECIPE_NAME, a.IMAGE_ID, a.RECIPE_TYPE_ID,a.FAVOURITES } into grouped
@@ -59,8 +61,7 @@ namespace FoodAPI.Repositories
                             image_id = grouped.Key.IMAGE_ID,
                             recipe_type_id = grouped.Key.RECIPE_TYPE_ID,
                             favourites = grouped.Key.FAVOURITES
-                        }).AsNoTracking();
-            var result = await Pager<RecipeDetailsResponse>.Paginate(data, request.pager);
+                        }).AsNoTracking().PaginateAsync(request.pager);
             if (request.pager.view == "block-view")
                 foreach (var item in result.Pages.Where(x => x.image_id.HasValue))
                 {
@@ -70,7 +71,7 @@ namespace FoodAPI.Repositories
         }
         public async Task<PagerResponse<RecipeDetailsResponse>> GetAllFavouriteRecipes(DecimalPageRequest request)
         {
-            var data = (from a in _context.Recipes
+            var result = await (from a in _context.Recipes
                         join b in _context.Ingredients on a.ID equals b.RECIPE_ID into ingredientsGroup
                         from ingobj in ingredientsGroup.DefaultIfEmpty()
                         where a.DELETE_FLAG != "Y" && a.ACTIVE == "Y" && a.FAVOURITES == "Y" && a.USER_ID == request.id
@@ -83,10 +84,19 @@ namespace FoodAPI.Repositories
                             image_id = grouped.Key.IMAGE_ID,
                             recipe_type_id = grouped.Key.RECIPE_TYPE_ID,
                             favourites = grouped.Key.FAVOURITES
-                        }).AsNoTracking();
-            var result = await Pager<RecipeDetailsResponse>.Paginate(data, request.pager);
+                        }).AsNoTracking().Sort(new List<SortingModel>
+                        {
+                            new SortingModel
+                            {
+                                name = "recipe_name",
+                                desc = true
+                            }
+                        }).PaginateAsync(request.pager);
             if (request.pager.view == "block-view")
-                result.Pages.Where(x => x.image_id.HasValue).ToList().ForEach(async x => x.image = await _documentRepository.GetImage(x.image_id));
+                foreach(var item in result.Pages.Where(x => x.image_id.HasValue))
+                {
+                    item.image = await _documentRepository.GetImage(item.image_id);
+                }
             return result;
         }
         public async Task<decimal> AddRecipe(RecipeResponse request)
@@ -155,6 +165,7 @@ namespace FoodAPI.Repositories
                 exist.UPDATED_TIME = TimeSpan.Parse(dt.ToString("HH:mm:ss"));
                 exist.INGREDIENT_NAME = ingredient.INGREDIENT_NAME;
                 exist.QUANTITY = ingredient.QUANTITY;
+                exist.OPTIONAL_FLAG = ingredient.OPTIONAL_FLAG;
                 _context.Ingredients.Update(exist);
                 if (await _context.SaveChangesAsync() > 0)
                     return ingredient.ID;
